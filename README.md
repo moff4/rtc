@@ -4,7 +4,7 @@
 [![Build Status](https://travis-ci.org/moff4/stc.svg?branch=master)](https://travis-ci.org/moff4/stc)
 [![CodeFactor](https://www.codefactor.io/repository/github/moff4/stc/badge)](https://www.codefactor.io/repository/github/moff4/stc)
 
-sRuntime type checker
+Runtime type checker
 
 ## example:
 
