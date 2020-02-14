@@ -2,6 +2,8 @@
 from typing import Tuple, List, Dict, Any, Optional, Union, Callable, TypeVar
 from collections import abc
 
+from .subtype import is_subtype
+
 T = TypeVar('T')
 
 CheckerType = Tuple[bool, Optional[str]]
@@ -15,7 +17,7 @@ def check_union(value: T, typo: Any) -> CheckerType:
 
 
 def check_list(value: T, typo: Any) -> CheckerType:
-    if type(typo) is type and not isinstance(value, typo):
+    if isinstance(typo, type) and not isinstance(value, typo):
         return False, 'expected "%s", got "%s"' % (typo, type(value))
     if hasattr(typo, '__origin__'):
         if not isinstance(value, typo.__origin__):
@@ -28,7 +30,7 @@ def check_list(value: T, typo: Any) -> CheckerType:
 
 
 def check_dict(value: T, typo: Any) -> CheckerType:
-    if type(typo) is type and not isinstance(value, typo):
+    if isinstance(typo, type) and not isinstance(value, typo):
         return False, 'expected "%s", got "%s"' % (typo, type(value))
     elif hasattr(typo, '__origin__'):
         if not isinstance(value, typo.__origin__):
@@ -67,25 +69,6 @@ def check_callable(value: T, typo: Any) -> CheckerType:
     return True, None
 
 
-def is_subtype(frst: Any, scnd: Any) -> bool:
-    """
-        return True if 'frst' is subtype of 'scnd'
-        Example:
-            List[str], List -> True
-            bool, int -> True
-            bool, bool -> True
-            int, bool -> False
-            Optional[str], Union[str, int, None] -> True
-            List[str], List[int] -> False
-    """
-    if type(frst) is type(scnd) is type:
-        return issubclass(frst, scnd)
-    if scnd == Any:
-        return True
-    # Fixme
-    return frst == scnd
-
-
 SUPPORTED_TYPOS = {
     Optional: check_union,
     Union: check_union,
@@ -105,19 +88,19 @@ SUPPORTED_ALIASES = {
 
 
 def check_type(value: T, value_type: Any) -> CheckerType:
-    if type(value_type) is tuple and len(value_type) == 1 and type(value_type[0]) is type:
+    if type(value_type) is tuple and len(value_type) == 1 and isinstance(value_type[0], type):
         value_type = value_type[0]
     if value_type in SUPPORTED_ALIASES:
         if not (res := SUPPORTED_ALIASES[value_type](value, value_type))[0]:
             return res
     if (
         (
-            type(value_type) is type
+            isinstance(value_type, type)
         ) or (
             (
                 isinstance(value_type, tuple)
             ) and (
-                all(type(i) is type for i in value_type)
+                all(isinstance(i, type) for i in value_type)
             )
         )
     ) and (
