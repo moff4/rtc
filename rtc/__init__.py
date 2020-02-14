@@ -1,5 +1,5 @@
 
-from .stc import staticclass
+from .rtc import staticclass
 from .subtype import is_subtype
 
 __all__ = [

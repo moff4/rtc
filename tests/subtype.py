@@ -3,7 +3,7 @@
 from typing import List, Dict, Tuple, Union, Optional, Any, Callable
 from unittest import TestCase
 
-from stc import is_subtype
+from rtc import is_subtype
 
 
 class TestSubType(TestCase):

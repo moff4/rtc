@@ -2,7 +2,7 @@
 from typing import List, Dict, Tuple, Union, Optional, Any, Callable
 from unittest import TestCase
 
-from stc import staticclass
+from rtc import staticclass
 
 
 class TestStaticClass(TestCase):
