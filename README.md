@@ -14,7 +14,7 @@ from typing import List, Dict, Any, Union, Optional
 
 from rtc import is_type
 
-print(is_type(int, Optional[int]))  # True
+print(is_type(123, Optional[int]))  # True
 print(is_type([1, 2, 123.123], List[Union[int, float]])) # True
 print(is_type({1: 2}, Dict[str, int]))  # False
 
