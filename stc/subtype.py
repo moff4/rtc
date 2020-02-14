@@ -78,33 +78,32 @@ def is_subtype(frst: Any, scnd: Any) -> bool:
             Optional[str], Union[str, int, None] -> True
             List[str], List[int] -> False
     """
-    if frst is None:
-        frst = type(None)
-    if scnd is None:
-        scnd = type(None)
+    frst = type(None) if frst is None else frst
+    scnd = type(None) if scnd is None else scnd
     if isinstance(frst, type) and isinstance(scnd, type):
         return issubclass(frst, scnd)
-    if scnd == Any:
-        return True
-    if frst == Any:
-        return False
-    if isinstance(scnd, TypeVar) and isinstance(frst, TypeVar):
-        return scnd.__name__ == frst.__name__
+    if Any in {scnd, frst}:
+        return scnd == Any
     if isinstance(scnd, TypeVar) or isinstance(frst, TypeVar):
-        return False
+        return isinstance(scnd, TypeVar) and isinstance(frst, TypeVar) and scnd.__name__ == frst.__name__
     if hasattr(frst, '__origin__') and isinstance(frst.__origin__, type) and isinstance(scnd, type):
         return issubclass(frst.__origin__, scnd)
     if hasattr(scnd, '__origin__') and isinstance(scnd.__origin__, type) and isinstance(frst, type):
         return issubclass(frst, scnd.__origin__)
-    if hasattr(frst, '__origin__') and hasattr(scnd, '__origin__'):
-        if (
-                isinstance(frst.__origin__, type)
-        ) and (
-                isinstance(scnd.__origin__, type)
-        ) and (
-            not issubclass(scnd.__origin__, frst.__origin__)
-        ):
-            return False
-    if hasattr(scnd, '__origin__'):
-        return (SUBTYPE_CHECK_HANDLERS.get(scnd.__origin__) or SUBTYPE_CHECK_HANDLERS.get(scnd))(frst, scnd)
-    return frst == scnd
+    if (
+        hasattr(frst, '__origin__')
+    ) and (
+        hasattr(scnd, '__origin__')
+    ) and (
+            isinstance(frst.__origin__, type)
+    ) and (
+            isinstance(scnd.__origin__, type)
+    ) and (
+        not issubclass(scnd.__origin__, frst.__origin__)
+    ):
+        return False
+    return (
+        (SUBTYPE_CHECK_HANDLERS.get(scnd.__origin__) or SUBTYPE_CHECK_HANDLERS.get(scnd))(frst, scnd)
+        if hasattr(scnd, '__origin__') else
+        frst == scnd
+    )
