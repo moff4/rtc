@@ -114,6 +114,10 @@ def check_type(value: T, value_type: Any) -> CheckerType:
     return True, None
 
 
+def is_type(value: Any, type: Any) -> bool:
+    return check_type(value, type)[0]
+
+
 def staticclass(cls=None, /, strict: bool = True):
     def wrap(cls):
         def gen_init(ant: Dict[str, Any]) -> Callable[[Any], None]:

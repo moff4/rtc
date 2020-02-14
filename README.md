@@ -5,9 +5,9 @@
 [![CodeFactor](https://www.codefactor.io/repository/github/moff4/stc/badge)](https://www.codefactor.io/repository/github/moff4/stc)
 
 
-## example of usage:
+## Example of usage:
 
-### subtime cheker
+### subtype cheker
 ```python
 
 from typing import Any, Union, List, Dict, Optional
