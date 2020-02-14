@@ -1,11 +1,24 @@
 
 # RTC - Runtime Type Checker
 
-[![Build Status](https://travis-ci.org/moff4/stc.svg?branch=master)](https://travis-ci.org/moff4/stc)
-[![CodeFactor](https://www.codefactor.io/repository/github/moff4/stc/badge)](https://www.codefactor.io/repository/github/moff4/stc)
+[![Build Status](https://travis-ci.org/moff4/rtc.svg?branch=master)](https://travis-ci.org/moff4/rtc)
+[![CodeFactor](https://www.codefactor.io/repository/github/moff4/rtc/badge)](https://www.codefactor.io/repository/github/moff4/rtc)
 
 
 ## Example of usage:
+
+### type cheker
+```python
+
+from typing import List, Dict, Any, Union, Optional
+
+from rtc import is_type
+
+print(is_type(int, Optional[int]))  # True
+print(is_type([1, 2, 123.123], List[Union[int, float]])) # True
+print(is_type({1: 2}, Dict[str, int]))  # False
+
+```
 
 ### subtype cheker
 ```python
