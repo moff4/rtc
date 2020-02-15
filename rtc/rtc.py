@@ -29,6 +29,26 @@ def check_list(value: T, typo: Any) -> CheckerType:
     return True, None
 
 
+def check_tuple(value: T, typo: Any) -> CheckerType:
+    if isinstance(typo, type) and not isinstance(value, typo):
+        return False, 'expected "%s", got "%s"' % (typo, type(value))
+    if hasattr(typo, '__origin__'):
+        if not isinstance(value, typo.__origin__):
+            return False, 'expected "%s", got "%s"' % (typo, type(value))
+        if typo.__args__:
+            if len(typo.__args__) == 1:
+                for i in value:
+                    if not (res := check_type(i, typo.__args__))[0]:
+                        return res
+            elif len(typo.__args__) != len(value):
+                return False, 'expected "%s", got "%s"' % (typo, str(value))
+            else:
+                for i in range(len(value)):
+                    if not (res := check_type(value[i], typo.__args__[i]))[0]:
+                        return res
+    return True, None
+
+
 def check_dict(value: T, typo: Any) -> CheckerType:
     if isinstance(typo, type) and not isinstance(value, typo):
         return False, 'expected "%s", got "%s"' % (typo, type(value))
@@ -74,8 +94,8 @@ SUPPORTED_TYPOS = {
     Union: check_union,
     List: check_list,
     list: check_list,
-    Tuple: check_list,
-    tuple: check_list,
+    Tuple: check_tuple,
+    tuple: check_tuple,
     Dict: check_dict,
     dict: check_dict,
     Any: lambda *a, **b: (True, ''),

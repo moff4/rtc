@@ -1,6 +1,6 @@
 
 from typing import Any, TypeVar, Union
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 
 
 def check_list(frst: Any, scnd: Any) -> bool:
@@ -29,10 +29,15 @@ def check_tuple(frst: Any, scnd: Any) -> bool:
 
 def check_union(frst: Any, scnd: Any) -> bool:
     if getattr(frst, '__origin__', None) == Union:
-        return all(
-            any(is_subtype(arg1, arg) for arg in scnd.__args__)
-            for arg1 in frst.__args__
-        )
+        for i in range(len(scnd.__args__)):
+            if scnd.__args__[i] is None:
+                scnd.__args__[i] = type(None)
+        for arg1 in frst.__args__:
+            if arg1 is None:
+                arg1 = type(None)
+            if not any(is_subtype(arg1, arg) for arg in scnd.__args__):
+                return False
+        return True
     return any(is_subtype(frst, arg) for arg in scnd.__args__)
 
 
@@ -58,12 +63,21 @@ def check_callable(frst: Any, scnd: Any) -> bool:
     return all(is_subtype(frst.__args__[i], scnd.__args__[i]) for i in range(len(frst.__args__)))
 
 
+def check_iterable(frst: Any, scnd: Any) -> bool:
+    if isinstance(frst, type):
+        return hasattr(tuple, '__iter__')
+    if isinstance(scnd.__args__[0], TypeVar):
+        return True
+    return is_subtype(frst.__args__[0], scnd.__args__[0])
+
+
 SUBTYPE_CHECK_HANDLERS = {
     list: check_list,
     tuple: check_tuple,
     dict: check_dict,
     Union: check_union,
     Callable: check_callable,
+    Iterable: check_iterable,
 }
 
 
@@ -90,18 +104,6 @@ def is_subtype(frst: Any, scnd: Any) -> bool:
         return issubclass(frst.__origin__, scnd)
     if hasattr(scnd, '__origin__') and isinstance(scnd.__origin__, type) and isinstance(frst, type):
         return issubclass(frst, scnd.__origin__)
-    if (
-        hasattr(frst, '__origin__')
-    ) and (
-        hasattr(scnd, '__origin__')
-    ) and (
-            isinstance(frst.__origin__, type)
-    ) and (
-            isinstance(scnd.__origin__, type)
-    ) and (
-        not issubclass(scnd.__origin__, frst.__origin__)
-    ):
-        return False
     return (
         (SUBTYPE_CHECK_HANDLERS.get(scnd.__origin__) or SUBTYPE_CHECK_HANDLERS.get(scnd))(frst, scnd)
         if hasattr(scnd, '__origin__') else

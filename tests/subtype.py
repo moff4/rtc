@@ -1,6 +1,5 @@
 
-
-from typing import List, Dict, Tuple, Union, Optional, Any, Callable
+from typing import List, Dict, Tuple, Union, Optional, Any, Callable, Iterable
 from unittest import TestCase
 
 from rtc import is_subtype
@@ -73,6 +72,12 @@ class TestSubType(TestCase):
         self.assertFalse(is_subtype(Dict[str, Any], Dict[str, str]))
         self.assertTrue(is_subtype(Dict[str, str], Dict[Union[str, int], str]))
         self.assertTrue(is_subtype(Dict[int, str], Dict[Union[str, int], str]))
+        self.assertTrue(
+            is_subtype(
+                Dict[str, List[Union[str, type(None)]]],
+                Dict[Any, List[Union[str, type(None)]]],
+            )
+        )
 
     def test_callable(self):
         self.assertTrue(is_subtype(Callable, Callable))
@@ -88,3 +93,38 @@ class TestSubType(TestCase):
         self.assertTrue(is_subtype(Callable[[Any, str], None], Callable[[Any, str], None]))
         self.assertFalse(is_subtype(Callable[[Any, Any], Any], Callable[[Union[int, float], str], Any]))
         self.assertFalse(is_subtype(Callable[[Any, float], str], Callable[[int, float], str]))
+
+    def test_iterable(self):
+        self.assertTrue(is_subtype(list, Iterable))
+        self.assertTrue(is_subtype(dict, Iterable))
+        self.assertTrue(is_subtype(tuple, Iterable))
+        self.assertFalse(is_subtype(int, Iterable))
+        self.assertFalse(is_subtype(float, Iterable))
+
+        self.assertTrue(is_subtype(List, Iterable))
+        self.assertTrue(is_subtype(List[Any], Iterable))
+        self.assertTrue(is_subtype(List[str], Iterable[str]))
+        self.assertTrue(is_subtype(List[Any], Iterable[Any]))
+        self.assertTrue(is_subtype(List[str], Iterable[Any]))
+        self.assertFalse(is_subtype(List[int], Iterable[str]))
+
+        self.assertTrue(is_subtype(Tuple, Iterable))
+        self.assertTrue(is_subtype(Tuple[Any], Iterable[Any]))
+        self.assertTrue(is_subtype(Tuple[Any], Iterable))
+        self.assertTrue(is_subtype(Tuple[str], Iterable[str]))
+        self.assertTrue(is_subtype(Tuple[str], Iterable[Any]))
+        self.assertFalse(is_subtype(Tuple[int], Iterable[str]))
+
+        self.assertTrue(is_subtype(Dict, Iterable))
+        self.assertTrue(is_subtype(Dict[Any, Any], Iterable))
+        self.assertTrue(is_subtype(Dict[Any, str], Iterable[Any]))
+        self.assertTrue(is_subtype(Dict[str, float], Iterable[str]))
+        self.assertTrue(is_subtype(Dict[str, int], Iterable[Any]))
+        self.assertFalse(is_subtype(Dict[int, str], Iterable[str]))
+
+        self.assertTrue(is_subtype(Iterable, Iterable))
+        self.assertTrue(is_subtype(Iterable, Iterable[Any]))
+        self.assertTrue(is_subtype(Iterable[Any], Iterable[Any]))
+        self.assertTrue(is_subtype(Iterable[int], Iterable[Any]))
+        self.assertTrue(is_subtype(Iterable[int], Iterable[Union[str, int]]))
+        self.assertFalse(is_subtype(Iterable[int], Iterable[str]))
