@@ -12,6 +12,7 @@ from typing import (
     Sized,
     Container,
     Reversible,
+    Coroutine,
 )
 from unittest import TestCase
 
@@ -253,3 +254,10 @@ class TestSubType(TestCase):
         self.assertTrue(is_subtype(Tuple[int], Reversible))
         self.assertTrue(is_subtype(Tuple[str], Reversible))
         self.assertTrue(is_subtype(Tuple[str, int], Reversible))
+
+    def test_corotine(self):
+        self.assertTrue(is_subtype(Coroutine, Coroutine))
+        self.assertTrue(is_subtype(Coroutine, Coroutine[Any, Any, Any]))
+        self.assertTrue(is_subtype(Coroutine[Any, Any, Any], Coroutine[Any, Any, Any]))
+        self.assertTrue(is_subtype(Coroutine[Any, Any, Any], Coroutine))
+        self.assertTrue(is_subtype(Coroutine[int, Any, Any], Coroutine[Union[int, float], Any, Any]))

@@ -1,6 +1,6 @@
 
 from typing import Any, TypeVar, Union, Hashable, Sized, _SpecialForm
-from collections.abc import Callable, Iterable, Container, Reversible
+from collections.abc import Callable, Iterable, Container, Reversible, Coroutine
 
 
 def check_list(frst: Any, scnd: Any) -> bool:
@@ -90,6 +90,21 @@ def check_alias(attr: str):
     )
 
 
+def check_coroutine(frst: Any, scnd: Any) -> bool:
+    if scnd.__origin__ != frst.__origin__:
+        return False
+    if tuple(
+        arg.__name__
+        for arg in scnd.__args__
+        if isinstance(arg, TypeVar)
+    ) == ('T_co', 'T_contra', 'V_co'):
+        return True
+    return all(
+        is_subtype(frst.__args__[i], scnd.__args__[i])
+        for i in range(3)
+    )
+
+
 SUBTYPE_CHECK_HANDLERS = {
     list: check_list,
     tuple: check_tuple,
@@ -102,6 +117,7 @@ SUBTYPE_CHECK_HANDLERS = {
     Sized: check_alias('__len__'),
     Container: check_alias('__contains__'),
     Reversible: check_alias('__reversed__'),
+    Coroutine: check_coroutine,
 }
 
 

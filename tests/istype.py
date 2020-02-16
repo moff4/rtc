@@ -1,8 +1,29 @@
 
-from typing import List, Dict, Tuple, Union, Optional, Any, Callable, Sized, Hashable, Reversible, Iterable
+from typing import (
+    List,
+    Dict,
+    Tuple,
+    Union,
+    Optional,
+    Any,
+    Callable,
+    Sized,
+    Hashable,
+    Reversible,
+    Iterable,
+    Coroutine,
+)
 from unittest import TestCase
 
 from rtc import is_type
+
+
+async def f(x: int) -> str:
+    return str(x)
+
+
+async def g(x: List[Optional[str]]) -> None:
+    ...
 
 
 class TestIsType(TestCase):
@@ -119,3 +140,13 @@ class TestIsType(TestCase):
         self.assertTrue(is_type({'123': 123}, Reversible))
         self.assertFalse(is_type(('123', 123), Reversible))
         self.assertTrue(is_type(range(10), Reversible))
+
+    def test_coroutine(self):
+        self.assertTrue(is_type(f(123), Coroutine))
+        self.assertFalse(is_type(f, Coroutine))
+        self.assertTrue(is_type(g('aaa'), Coroutine))
+        self.assertFalse(is_type(g, Coroutine))
+        self.assertFalse(is_type(123, Coroutine))
+        self.assertFalse(is_type(lambda x: x, Coroutine))
+        self.assertFalse(is_type('smth', Coroutine))
+        self.assertFalse(is_type([123, 12.11], Coroutine))

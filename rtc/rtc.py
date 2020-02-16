@@ -1,4 +1,5 @@
 
+import asyncio
 from typing import Tuple, List, Dict, Any, Optional, Union, Callable, TypeVar
 from collections import abc
 
@@ -113,6 +114,7 @@ SUPPORTED_TYPOS = {
     abc.Sized: check_alias('__len__'),
     abc.Hashable: check_alias('__hash__'),
     abc.Reversible: check_alias('__reversed__'),
+    abc.Coroutine: lambda value, value_type: (asyncio.iscoroutine(value), 'Excpected Coroutine, got "%s"' % value)
 }  # type: Dict[Any, Callable[[T, Any], CheckerType]]
 
 SUPPORTED_ALIASES = {
