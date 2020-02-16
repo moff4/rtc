@@ -114,7 +114,13 @@ SUPPORTED_TYPOS = {
     abc.Sized: check_alias('__len__'),
     abc.Hashable: check_alias('__hash__'),
     abc.Reversible: check_alias('__reversed__'),
-    abc.Coroutine: lambda value, value_type: (asyncio.iscoroutine(value), 'Excpected Coroutine, got "%s"' % value)
+    abc.Coroutine: lambda value, value_type: (asyncio.iscoroutine(value), 'Excpected Coroutine, got "%s"' % value),
+    abc.Generator: (
+        lambda value, value_type: (
+            bool(getattr(value, '__next__', None) and getattr(value, 'send', None)),
+            'Expected generator, got "%s"' % value,
+        )
+    ),
 }  # type: Dict[Any, Callable[[T, Any], CheckerType]]
 
 SUPPORTED_ALIASES = {

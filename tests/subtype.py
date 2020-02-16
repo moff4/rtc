@@ -12,7 +12,11 @@ from typing import (
     Sized,
     Container,
     Reversible,
+    Generator,
     Coroutine,
+    AsyncGenerator,
+    Generic,
+    TypeVar,
 )
 from unittest import TestCase
 
@@ -261,3 +265,32 @@ class TestSubType(TestCase):
         self.assertTrue(is_subtype(Coroutine[Any, Any, Any], Coroutine[Any, Any, Any]))
         self.assertTrue(is_subtype(Coroutine[Any, Any, Any], Coroutine))
         self.assertTrue(is_subtype(Coroutine[int, Any, Any], Coroutine[Union[int, float], Any, Any]))
+        self.assertFalse(is_subtype(Coroutine[int, Any, Any], Coroutine[Optional[float], Any, Any]))
+
+    def test_generator(self):
+        self.assertTrue(is_subtype(Generator, Generator))
+        self.assertTrue(is_subtype(Generator, Generator[Any, Any, Any]))
+        self.assertTrue(is_subtype(Generator[Any, Any, Any], Generator[Any, Any, Any]))
+        self.assertTrue(is_subtype(Generator[Any, Any, Any], Generator))
+        self.assertTrue(is_subtype(Generator[int, Any, Any], Generator[Union[int, float], Any, Any]))
+        self.assertFalse(is_subtype(Generator[int, Any, Any], Generator[Optional[float], Any, Any]))
+
+    def test_async_generator(self):
+        self.assertTrue(is_subtype(AsyncGenerator, AsyncGenerator))
+        self.assertTrue(is_subtype(AsyncGenerator, AsyncGenerator[Any, Any]))
+        self.assertTrue(is_subtype(AsyncGenerator[Any, Any], AsyncGenerator[Any, Any]))
+        self.assertTrue(is_subtype(AsyncGenerator[Any, Any], AsyncGenerator))
+        self.assertTrue(is_subtype(AsyncGenerator[int, Any], AsyncGenerator[Union[int, float], Any]))
+        self.assertFalse(is_subtype(AsyncGenerator[int, Any], AsyncGenerator[Optional[float], Any]))
+
+    def test_generic(self):
+        K = TypeVar('K')
+        V = TypeVar('V')
+
+        class A(Generic[K, V]):
+            ...
+
+        self.assertTrue(is_subtype(A, A))
+        self.assertTrue(is_subtype(A[str, str], A[Any, Any]))
+        self.assertTrue(is_subtype(A[str, str], A[Any, Any]))
+        self.assertFalse(is_subtype(A[str, Any], A[Any, str]))

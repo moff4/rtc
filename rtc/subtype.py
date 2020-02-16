@@ -1,6 +1,6 @@
 
-from typing import Any, TypeVar, Union, Hashable, Sized, _SpecialForm
-from collections.abc import Callable, Iterable, Container, Reversible, Coroutine
+from typing import Any, Tuple, TypeVar, Union, Hashable, Sized, _SpecialForm, Generic
+from collections.abc import Callable, Iterable, Container, Reversible, Coroutine, Generator, AsyncGenerator
 
 
 def check_list(frst: Any, scnd: Any) -> bool:
@@ -90,18 +90,29 @@ def check_alias(attr: str):
     )
 
 
-def check_coroutine(frst: Any, scnd: Any) -> bool:
-    if scnd.__origin__ != frst.__origin__:
-        return False
-    if tuple(
-        arg.__name__
-        for arg in scnd.__args__
-        if isinstance(arg, TypeVar)
-    ) == ('T_co', 'T_contra', 'V_co'):
-        return True
-    return all(
-        is_subtype(frst.__args__[i], scnd.__args__[i])
-        for i in range(3)
+def check_yielder(type_vars: Tuple[str, ...]):
+    def check(frst: Any, scnd: Any) -> bool:
+        if scnd.__origin__ != frst.__origin__:
+            return False
+        if tuple(
+            arg.__name__
+            for arg in scnd.__args__
+            if isinstance(arg, TypeVar)
+        ) == type_vars:
+            return True
+        return all(
+            is_subtype(frst.__args__[i], scnd.__args__[i])
+            for i in range(len(type_vars))
+        )
+    return check
+
+
+def check_generic(frst: Any, scnd: Any) -> bool:
+    return issubclass(frst.__origin__, scnd.__origin__) and (
+        len(frst.__args__) == len(scnd.__args__) and all(
+            is_subtype(frst.__args__[i], scnd.__args__[i])
+            for i in range(len(frst.__args__))
+        )
     )
 
 
@@ -117,7 +128,10 @@ SUBTYPE_CHECK_HANDLERS = {
     Sized: check_alias('__len__'),
     Container: check_alias('__contains__'),
     Reversible: check_alias('__reversed__'),
-    Coroutine: check_coroutine,
+    Coroutine: check_yielder(('T_co', 'T_contra', 'V_co')),
+    Generator: check_yielder(('T_co', 'T_contra', 'V_co')),
+    AsyncGenerator: check_yielder(('T_co', 'T_contra')),
+    Generic: check_generic,
 }
 
 
@@ -144,8 +158,8 @@ def is_subtype(frst: Any, scnd: Any) -> bool:
         return issubclass(frst.__origin__, scnd)
     if hasattr(scnd, '__origin__') and isinstance(scnd.__origin__, type) and isinstance(frst, type):
         return issubclass(frst, scnd.__origin__)
-    return (
-        (SUBTYPE_CHECK_HANDLERS.get(scnd.__origin__) or SUBTYPE_CHECK_HANDLERS.get(scnd))(frst, scnd)
-        if hasattr(scnd, '__origin__') else
-        frst == scnd
-    )
+    if hasattr(scnd, '__origin__'):
+        handler = (SUBTYPE_CHECK_HANDLERS.get(scnd.__origin__) or SUBTYPE_CHECK_HANDLERS.get(scnd)) or check_generic
+    else:
+        handler = lambda x, y: x == y
+    return handler(frst, scnd)

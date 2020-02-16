@@ -12,6 +12,7 @@ from typing import (
     Reversible,
     Iterable,
     Coroutine,
+    Generator,
 )
 from unittest import TestCase
 
@@ -150,3 +151,13 @@ class TestIsType(TestCase):
         self.assertFalse(is_type(lambda x: x, Coroutine))
         self.assertFalse(is_type('smth', Coroutine))
         self.assertFalse(is_type([123, 12.11], Coroutine))
+
+    def test_generator(self):
+        def f():
+            x = yield  # type: int
+            while x > 0:
+                yield x
+
+        self.assertFalse(is_type(range(10), Generator))
+        self.assertFalse(is_type(map(int, [1, 2, 3]), Generator))
+        self.assertTrue(is_type(f(), Generator))
