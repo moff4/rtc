@@ -1,6 +1,6 @@
 
-from typing import Any, TypeVar, Union
-from collections.abc import Callable, Iterable
+from typing import Any, TypeVar, Union, Hashable, Sized, _SpecialForm
+from collections.abc import Callable, Iterable, Container, Reversible
 
 
 def check_list(frst: Any, scnd: Any) -> bool:
@@ -21,8 +21,12 @@ def check_tuple(frst: Any, scnd: Any) -> bool:
         return True
     if not frst.__args__ and scnd.__args__:
         return False
-    for arg1 in frst.__args__:
-        if not any(is_subtype(arg1, arg2) for arg2 in scnd.__args__):
+    if len(scnd.__args__) == 1:
+        return all(is_subtype(arg1, scnd.__args__[0]) for arg1 in frst.__args__)
+    if len(frst.__args__) != len(scnd.__args__):
+        return False
+    for i in range(len(frst.__args__)):
+        if not is_subtype(frst.__args__[i], scnd.__args__[i]):
             return False
     return True
 
@@ -71,13 +75,33 @@ def check_iterable(frst: Any, scnd: Any) -> bool:
     return is_subtype(frst.__args__[0], scnd.__args__[0])
 
 
+def check_alias(attr: str):
+    return lambda frst, scnd: (
+        isinstance(frst, type) and getattr(frst, attr, None)
+    ) or (
+        (
+            is_subtype(frst.__origin__, scnd)
+        ) if not isinstance(frst.__origin__, _SpecialForm) else (
+            all(
+                is_subtype(arg, scnd)
+                for arg in frst.__args__
+            )
+        )
+    )
+
+
 SUBTYPE_CHECK_HANDLERS = {
     list: check_list,
     tuple: check_tuple,
     dict: check_dict,
+    set: check_list,
     Union: check_union,
     Callable: check_callable,
     Iterable: check_iterable,
+    Hashable: check_alias('__hash__'),
+    Sized: check_alias('__len__'),
+    Container: check_alias('__contains__'),
+    Reversible: check_alias('__reversed__'),
 }
 
 
@@ -96,7 +120,7 @@ def is_subtype(frst: Any, scnd: Any) -> bool:
     scnd = type(None) if scnd is None else scnd
     if isinstance(frst, type) and isinstance(scnd, type):
         return issubclass(frst, scnd)
-    if Any in {scnd, frst}:
+    if Any == scnd or Any == frst:
         return scnd == Any
     if isinstance(scnd, TypeVar) or isinstance(frst, TypeVar):
         return isinstance(scnd, TypeVar) and isinstance(frst, TypeVar) and scnd.__name__ == frst.__name__

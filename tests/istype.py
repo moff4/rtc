@@ -1,5 +1,5 @@
 
-from typing import List, Dict, Tuple, Union, Optional, Any, Callable
+from typing import List, Dict, Tuple, Union, Optional, Any, Callable, Sized, Hashable, Reversible, Iterable
 from unittest import TestCase
 
 from rtc import is_type
@@ -73,3 +73,49 @@ class TestIsType(TestCase):
         self.assertFalse(is_type(g, Callable[[Union[int, float], Dict[str, List[str]]], Optional[bool]]))
         self.assertFalse(is_type(g, Callable[[Union[int, float], Dict[str, List[Optional[str]]]], Optional[bool]]))
         self.assertTrue(is_type(g, Callable[[Union[int, float], Dict[Any, List[Optional[str]]]], Optional[bool]]))
+
+    def test_sized(self):
+        self.assertFalse(is_type(123, Sized))
+        self.assertFalse(is_type(12.3, Sized))
+        self.assertFalse(is_type(Ellipsis, Sized))
+        self.assertTrue(is_type('123', Sized))
+        self.assertTrue(is_type(b'123', Sized))
+        self.assertTrue(is_type(['123', '123'], Sized))
+        self.assertTrue(is_type({'123', 123}, Sized))
+        self.assertTrue(is_type({'123': 123}, Sized))
+        self.assertTrue(is_type(('123', 123), Sized))
+
+    def test_hashable(self):
+        self.assertTrue(is_type(123, Hashable))
+        self.assertTrue(is_type(12.3, Hashable))
+        self.assertTrue(is_type(Ellipsis, Hashable))
+        self.assertTrue(is_type('123', Hashable))
+        self.assertTrue(is_type(b'123', Hashable))
+        self.assertFalse(is_type(['123', '123'], Hashable))
+        self.assertFalse(is_type({'123', 123}, Hashable))
+        self.assertFalse(is_type({'123': 123}, Hashable))
+        self.assertTrue(is_type(('123', 123), Hashable))
+
+    def test_iterable(self):
+        self.assertFalse(is_type(123, Iterable))
+        self.assertFalse(is_type(12.3, Iterable))
+        self.assertFalse(is_type(Ellipsis, Iterable))
+        self.assertTrue(is_type('123', Iterable))
+        self.assertTrue(is_type(b'123', Iterable))
+        self.assertTrue(is_type(['123', '123'], Iterable))
+        self.assertTrue(is_type({'123', 123}, Iterable))
+        self.assertTrue(is_type({'123': 123}, Iterable))
+        self.assertTrue(is_type(('123', 123), Iterable))
+        self.assertTrue(is_type(range(10), Iterable))
+
+    def test_reversed(self):
+        self.assertFalse(is_type(123, Reversible))
+        self.assertFalse(is_type(12.3, Reversible))
+        self.assertFalse(is_type(Ellipsis, Reversible))
+        self.assertFalse(is_type('123', Reversible))
+        self.assertFalse(is_type(b'123', Reversible))
+        self.assertTrue(is_type(['123', '123'], Reversible))
+        self.assertFalse(is_type({'123', 123}, Reversible))
+        self.assertTrue(is_type({'123': 123}, Reversible))
+        self.assertFalse(is_type(('123', 123), Reversible))
+        self.assertTrue(is_type(range(10), Reversible))

@@ -89,6 +89,15 @@ def check_callable(value: T, typo: Any) -> CheckerType:
     return True, None
 
 
+def check_alias(attr: str) -> Callable[[T, Any], CheckerType]:
+    return (
+        lambda value, typo: (
+            bool(getattr(value, attr, None)),
+            'expected obj with method "%s()", got "%s"' % (attr, value),
+        )
+    )
+
+
 SUPPORTED_TYPOS = {
     Optional: check_union,
     Union: check_union,
@@ -100,6 +109,10 @@ SUPPORTED_TYPOS = {
     dict: check_dict,
     Any: lambda *a, **b: (True, ''),
     abc.Callable: check_callable,
+    abc.Iterable: check_alias('__iter__'),
+    abc.Sized: check_alias('__len__'),
+    abc.Hashable: check_alias('__hash__'),
+    abc.Reversible: check_alias('__reversed__'),
 }  # type: Dict[Any, Callable[[T, Any], CheckerType]]
 
 SUPPORTED_ALIASES = {
