@@ -2,6 +2,8 @@
 from typing import Any, Tuple, TypeVar, Union, Hashable, Sized, _SpecialForm, Generic
 from collections.abc import Callable, Iterable, Container, Reversible, Coroutine, Generator, AsyncGenerator
 
+from .tools import is_typed_dict, typeddict_to_dict
+
 
 def check_list(frst: Any, scnd: Any) -> bool:
     if frst.__args__ == scnd.__args__:
@@ -116,6 +118,24 @@ def check_generic(frst: Any, scnd: Any) -> bool:
     )
 
 
+def check_typeddict(frst: Any, scnd: Any) -> bool:
+    if isinstance(scnd, type) and issubclass(scnd, dict) and hasattr(scnd, '__annotations__'):
+        for key, key_type in scnd.__annotations__.items():
+            if key not in frst.__annotations__ or not is_subtype(frst.__annotations__[key], key_type):
+                return False
+    elif hasattr(scnd, '__origin__'):
+        key1 = scnd.__args__[0]
+        key2 = scnd.__args__[1]
+        if isinstance(key1, TypeVar) and key1.__name__ == 'KT':
+            key1 = Any
+        if isinstance(key2, TypeVar) and key2.__name__ == 'VT':
+            key2 = Any
+        if not is_subtype(str, key1):
+            return False
+        return all(is_subtype(key_type, key2) for key, key_type in frst.__annotations__.items())
+    return True
+
+
 SUBTYPE_CHECK_HANDLERS = {
     list: check_list,
     tuple: check_tuple,
@@ -148,17 +168,22 @@ def is_subtype(frst: Any, scnd: Any) -> bool:
     """
     frst = type(None) if frst is None else frst
     scnd = type(None) if scnd is None else scnd
-    if isinstance(frst, type) and isinstance(scnd, type):
+    if is_typed_dict(scnd) + is_typed_dict(frst) == 1:
+        scnd = typeddict_to_dict(scnd) if is_typed_dict(scnd) else scnd
+        frst = typeddict_to_dict(frst) if is_typed_dict(frst) else frst
+    if isinstance(frst, type) and isinstance(scnd, type) and not is_typed_dict(scnd):
         return issubclass(frst, scnd)
     if Any == scnd or Any == frst:
         return scnd == Any
     if isinstance(scnd, TypeVar) or isinstance(frst, TypeVar):
         return isinstance(scnd, TypeVar) and isinstance(frst, TypeVar) and scnd.__name__ == frst.__name__
-    if hasattr(frst, '__origin__') and isinstance(frst.__origin__, type) and isinstance(scnd, type):
+    if hasattr(frst, '__origin__') and isinstance(frst.__origin__, type) and isinstance(scnd, type) and not is_typed_dict(scnd):
         return issubclass(frst.__origin__, scnd)
-    if hasattr(scnd, '__origin__') and isinstance(scnd.__origin__, type) and isinstance(frst, type):
+    if hasattr(scnd, '__origin__') and isinstance(scnd.__origin__, type) and isinstance(frst, type) and not is_typed_dict(frst):
         return issubclass(frst, scnd.__origin__)
-    if hasattr(scnd, '__origin__'):
+    if is_typed_dict(frst):
+        handler = check_typeddict
+    elif hasattr(scnd, '__origin__'):
         handler = (SUBTYPE_CHECK_HANDLERS.get(scnd.__origin__) or SUBTYPE_CHECK_HANDLERS.get(scnd)) or check_generic
     else:
         handler = lambda x, y: x == y

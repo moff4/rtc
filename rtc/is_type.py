@@ -4,6 +4,7 @@ from typing import Tuple, List, Dict, Any, Optional, Union, Callable, TypeVar
 from collections import abc
 
 from .subtype import is_subtype
+from .tools import is_typed_dict
 
 T = TypeVar('T')
 
@@ -99,6 +100,23 @@ def check_alias(attr: str) -> Callable[[T, Any], CheckerType]:
     )
 
 
+def check_typeddict(value: T, value_type: Any) -> CheckerType:
+    if not isinstance(value, dict):
+        return False, 'expected dict, got "%s"' % type(value)
+    checked = set()
+    for key, value in value.items():
+        if key in value_type.__annotations__:
+            res = check_type(value, value_type.__annotations__[key])
+            if not res[0]:
+                return False, '%s in TypedDict["%s"]' % (res[1], key)
+            checked.add(key)
+        elif value_type.__total__:
+            return False, 'expected key "%s" type of "%s" in TypedDict' % (key, type(value))
+    if value_type.__total__ and (missed := (set(value_type.__annotations__) - checked)):
+        return False, 'fields "%s" missed in TypedDict' % ('","'.join(list(missed)))
+    return True, ''
+
+
 SUPPORTED_TYPOS = {
     Optional: check_union,
     Union: check_union,
@@ -145,6 +163,8 @@ def check_type(value: T, value_type: Any) -> CheckerType:
             )
         )
     ) and (
+        not is_typed_dict(value_type)
+    ) and (
         not isinstance(value, value_type)
     ):
         return False, 'for "%s" expected type "%s", got "%s"' % (value, value_type, type(value))
@@ -152,6 +172,8 @@ def check_type(value: T, value_type: Any) -> CheckerType:
         if value_type.__origin__ in SUPPORTED_TYPOS:
             if not (res := SUPPORTED_TYPOS[value_type.__origin__](value, value_type))[0]:
                 return res
+    elif is_typed_dict(value_type):
+        return check_typeddict(value, value_type)
     return True, None
 
 

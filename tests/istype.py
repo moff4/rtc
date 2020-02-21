@@ -13,6 +13,7 @@ from typing import (
     Iterable,
     Coroutine,
     Generator,
+    TypedDict,
 )
 from unittest import TestCase
 
@@ -161,3 +162,35 @@ class TestIsType(TestCase):
         self.assertFalse(is_type(range(10), Generator))
         self.assertFalse(is_type(map(int, [1, 2, 3]), Generator))
         self.assertTrue(is_type(f(), Generator))
+
+    def test_typeddict(self):
+        class A(TypedDict):
+            a: int
+            b: str
+
+        class B(TypedDict):
+            a: Union[int, float]
+            b: Optional[str]
+
+        class C(TypedDict, total=False):
+            a: Union[int, float]
+            b: Optional[str]
+
+        self.assertTrue(is_type({'a': 123, 'b': '123'}, A))
+        self.assertFalse(is_type({'a': 123, 'b': None}, A))
+        self.assertFalse(is_type({'a': 12.3, 'b': '123'}, A))
+        self.assertTrue(is_type({'a': 12.3, 'b': '123'}, B))
+        self.assertTrue(is_type({'a': 123, 'b': None}, B))
+        self.assertTrue(is_type({'a': 12.3, 'b': '123'}, B))
+        self.assertTrue(is_type({'a': 12.3, 'b': None}, B))
+        self.assertFalse(is_type({'b': None}, B))
+        self.assertFalse(is_type({'a': 123}, B))
+        self.assertFalse(is_type({'a': 'None'}, B))
+        self.assertFalse(is_type({'b': 'None'}, B))
+        self.assertTrue(is_type({'a': 12.3, 'b': '123'}, C))
+        self.assertTrue(is_type({'a': 123, 'b': None}, C))
+        self.assertTrue(is_type({'a': 12.3, 'b': '123'}, C))
+        self.assertTrue(is_type({'a': 12.3, 'b': None}, C))
+        self.assertTrue(is_type({'b': None}, C))
+        self.assertFalse(is_type({'a': 'None'}, C))
+        self.assertTrue(is_type({'a': 123}, C))

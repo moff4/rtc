@@ -17,6 +17,7 @@ from typing import (
     AsyncGenerator,
     Generic,
     TypeVar,
+    TypedDict,
 )
 from unittest import TestCase
 
@@ -294,3 +295,25 @@ class TestSubType(TestCase):
         self.assertTrue(is_subtype(A[str, str], A[Any, Any]))
         self.assertTrue(is_subtype(A[str, str], A[Any, Any]))
         self.assertFalse(is_subtype(A[str, Any], A[Any, str]))
+
+    def test_typeddict(self):
+        class A(TypedDict):
+            a: int
+            b: Optional[str]
+
+        class B(TypedDict):
+            a: int
+            b: str
+
+        self.assertTrue(is_subtype(B, A))
+        self.assertTrue(is_subtype(B, Dict))
+        self.assertTrue(is_subtype(B, Dict[str, Any]))
+        self.assertTrue(is_subtype(B, Dict[str, Union[str, int]]))
+        self.assertFalse(is_subtype(A, B))
+        self.assertFalse(is_subtype(B, Dict[str, str]))
+        self.assertFalse(is_subtype(Dict, A))
+        self.assertTrue(is_subtype(Dict[str, Union[int, Optional[str]]], A))
+        self.assertTrue(is_subtype(Dict[str, Union[int, Optional[str]]], A))
+        self.assertTrue(is_subtype(Dict[str, Union[int, str]], A))
+        self.assertTrue(is_subtype(Dict[str, Union[int, str]], B))
+        self.assertFalse(is_subtype(Dict[str, Union[int, str, None]], B))
