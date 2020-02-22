@@ -32,6 +32,58 @@ print(is_subtype(Dict[str, Optional[float]], Dict[str, Union[int, float, None]])
 print(is_subtype(Union[int, float], float))  # False
 ```
 
+### Schema cheker
+
+```python
+from typing import List, Dict, Optional, Union, TypedDict
+from rtc import is_type
+
+class TextData(TypedDict):
+    text: Optional[str]
+
+class WeatherData(TypedDict):
+    time: int
+    loaction: Dict[str, float]
+    exrta: Optional[str]
+
+class Object(TypedDict):
+    object_id: str
+    data: Union[TextData, WeatherData]
+
+class Action(TypedDict, total=False):
+    action_id: str
+    title: str
+    color: Optional[str]
+    handable: bool
+
+class Session(TypedDict, total=False):
+    session_id: str
+    message_id: int
+    time_zone: Optional[str]
+
+class Response(TypedDict):
+    objects: List[Object]
+    actions: List[Action]
+    session: Session
+
+is_type(
+    {
+        'actions': [{'action_id': 'some-id', 'title': 'ok', 'color': None, 'handable': True}],
+        'objects': [],
+        'session': {'session_id': '-some-id-', 'message_id': 0}
+    },
+    Response,
+)  # return True
+is_type(
+    {
+        'actions': [],
+        'objects': [{'object_id': 'text', 'data': {}}],
+        'session': {'session_id': '-some-id-', 'message_id': 0},
+    },
+    Response,
+)  # return False as Object.data is invalid 
+```
+
 ### Class decorator
 ```python
 
